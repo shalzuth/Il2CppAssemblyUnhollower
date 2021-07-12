@@ -453,7 +453,6 @@ namespace UnhollowerRuntimeLib
             {
                 body.Emit(OpCodes.Call, typeof(IL2CPP).GetMethod(nameof(IL2CPP.Il2CppObjectBaseToPtr))!);
             }
-            body.Emit(OpCodes.Ret);
 
             var exceptionLocal = body.DeclareLocal(typeof(Exception));
             body.BeginCatchBlock(typeof(Exception));
@@ -493,6 +492,7 @@ namespace UnhollowerRuntimeLib
             return type.IsValueType ? type : typeof(IntPtr);
         }
 
+        static TypeToClassDelegate ttcd;
         private static void HookClassFromType()
         {
             var lib = LoadLibrary("GameAssembly.dll");
@@ -504,8 +504,8 @@ namespace UnhollowerRuntimeLib
 
             if (targetMethod == IntPtr.Zero)
                 return;
-
-            ourOriginalTypeToClassMethod = Detour.Detour(targetMethod, new TypeToClassDelegate(ClassFromTypePatch));
+            ttcd = new TypeToClassDelegate(ClassFromTypePatch);
+            ourOriginalTypeToClassMethod = Detour.Detour(targetMethod, ttcd);
             LogSupport.Trace("il2cpp_class_from_il2cpp_type patched");
         }
 
