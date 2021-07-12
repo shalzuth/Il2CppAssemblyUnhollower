@@ -454,7 +454,6 @@ MarshallingUtils.TokensMap.RegisterRuntimeInjectedType(classPointer.Pointer, typ
             {
                 body.Emit(OpCodes.Call, typeof(IL2CPP).GetMethod(nameof(IL2CPP.Il2CppObjectBaseToPtr))!);
             }
-            body.Emit(OpCodes.Ret);
 
             var exceptionLocal = body.DeclareLocal(typeof(Exception));
             body.BeginCatchBlock(typeof(Exception));
