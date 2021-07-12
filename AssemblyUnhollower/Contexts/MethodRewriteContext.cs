@@ -195,7 +195,7 @@ namespace AssemblyUnhollower.Contexts
             }
         }
 
-        private static MethodReference? FindMatchingMethod(TypeReference type, MethodReference originalMethod, bool typePrefixedName = true)
+        private MethodReference? FindMatchingMethod(TypeReference type, MethodReference originalMethod, bool typePrefixedName = true)
         {
             if (type is GenericInstanceType generic)
             {
@@ -211,11 +211,32 @@ namespace AssemblyUnhollower.Contexts
                     newReference.Parameters.Add(baseReferenceParameter);
                 return newReference;
             }
-
-            return type.Resolve().Methods
-                .Single(it =>
-                    (typePrefixedName ? originalMethod.Name.EndsWith("." + it.Name) : originalMethod.Name == it.Name) && // todo: also match parameter types?
-                    originalMethod.Parameters.Count == it.Parameters.Count);
+            var methods = type.Resolve().Methods.ToList().FindAll(it =>
+                (typePrefixedName ? UnmangledName.EndsWith("." + it.Name) : UnmangledName == it.Name) &&
+                originalMethod.Parameters.Count == it.Parameters.Count);
+            if (methods.Count == 1) return methods.First(); // if only a single match, use it
+            var matchingMethod = methods.FirstOrDefault(it => // first pass, if matches any non-generic methods
+                originalMethod.Parameters.Select(p => p.ParameterType).SequenceEqual(it.Parameters.Select(p => p.ParameterType)));
+            if (matchingMethod == null) // second pass, check generics
+            {
+                foreach(var possibleMethod in methods)
+                {
+                    var matchesNonGeneric = true;
+                    for(var i = 0; i < originalMethod.Parameters.Count; i++)
+                    {
+                        var origParamType = originalMethod.Parameters[i];
+                        var newParamType = possibleMethod.Parameters[i];
+                        if (newParamType.ParameterType.IsGenericParameter) continue;
+                        if (origParamType.ParameterType == newParamType.ParameterType) continue;
+                        matchesNonGeneric = false;
+                    }
+                    if (matchesNonGeneric)
+                    {
+                        return possibleMethod;
+                    }
+                }
+            }
+            return matchingMethod;
         }
 
         private static bool CanMethodBeImplementingInterface(string methodName, TypeReference interfaceType)
