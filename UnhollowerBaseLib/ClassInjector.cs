@@ -112,7 +112,7 @@ namespace UnhollowerRuntimeLib
                     throw new ArgumentException($"Type with FullName {type.FullName} is already injected. Don't inject the same type twice, or use a different namespace");
 
             if (ourOriginalTypeToClassMethod == null) HookClassFromType();
-            if (originalClassFromNameMethod == null) HookClassFromName();
+            //if (originalClassFromNameMethod == null) HookClassFromName();
             if (FakeAssembly == null) CreateFakeAssembly();
 
             var classPointer = UnityVersionHandler.NewClass(baseClassPointer.VtableCount);
